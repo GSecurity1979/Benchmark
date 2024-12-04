@@ -97,12 +97,15 @@ def drive_benchmark():
     print("Average Drive Score:", avg_drive_score)
     return avg_drive_score
 
+# Network Benchmark using subprocess to call speedtest-cli
 def network_benchmark():
     print("\nNetwork Benchmark")
     print("-----------------")
     try:
+        # Use subprocess to call the speedtest-cli tool directly
         result = subprocess.run(["speedtest-cli", "--simple"], capture_output=True, text=True)
         
+        # Parse the output from the command
         output = result.stdout
         download_speed = None
         upload_speed = None
@@ -121,6 +124,7 @@ def network_benchmark():
         else:
             print("Network speed could not be determined.")
             return None
+
     except Exception as e:
         print(f"Error during network benchmark: {e}")
         return None
