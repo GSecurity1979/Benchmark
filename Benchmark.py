@@ -1,7 +1,9 @@
 import psutil
 import time
+import os
 import tkinter as tk
 from tkinter import font
+import speedtest
 
 # CPU Benchmark
 def cpu_benchmark():
@@ -11,11 +13,10 @@ def cpu_benchmark():
     for i in range(5):
         cpu_percent = psutil.cpu_percent(interval=1, percpu=True)
         cpu_scores.append(sum(cpu_percent) / len(cpu_percent))
-    avg_cpu_score = round(sum(cpu_scores) / len(cpu_scores), 2)
+    avg_cpu_score = round(sum(cpu_scores) / len(cpu_scores) * 100, 2)
     print("Average CPU Score:", avg_cpu_score)
     return avg_cpu_score
 
-# GPU Benchmark
 def gpu_benchmark():
     print("\nGPU Benchmark")
     print("-------------")
@@ -44,10 +45,17 @@ def gpu_benchmark():
                     prg.square(queue, (N,), None, a_gpu, b_gpu)
                     queue.finish()
                     elapsed = time.time() - start
-                    gpu_score = N / elapsed
-                    rounded_gpu_score = round(gpu_score / 10000000)
-                    print("GPU Benchmark Score:", rounded_gpu_score)
-                    return rounded_gpu_score
+                    
+                    # Check if elapsed is too small
+                    if elapsed > 0:
+                        gpu_score = N / elapsed
+                        # Round the GPU benchmark score to the first two figures
+                        rounded_gpu_score = round(gpu_score / 10000000)  # Rounding to first two figures
+                        print("GPU Benchmark Score:", rounded_gpu_score)
+                        return rounded_gpu_score
+                    else:
+                        print("GPU benchmark time is too small to calculate.")
+                        return None
                 except cl.RuntimeError as e:
                     print("Failed to run on device", device.name, "Error:", e)
     except ImportError:
@@ -59,11 +67,14 @@ def ram_benchmark():
     print("\nRAM Benchmark")
     print("-------------")
     ram_usage = []
+    print("RAM Usage: ")
     for i in range(5):
         ram = psutil.virtual_memory()
+        print(ram)
         ram_usage.append(ram.percent)
         time.sleep(1)
-    avg_ram_score = round(sum(ram_usage) / len(ram_usage), 2)
+    avg_ram_score = sum(ram_usage) / len(ram_usage)
+    avg_ram_score = round(avg_ram_score, 2)  # Rounding to two decimal places
     print("Average RAM Score:", avg_ram_score)
     return avg_ram_score
 
@@ -75,9 +86,16 @@ def drive_benchmark():
     drives = psutil.disk_partitions()
     for drive in drives:
         if 'cdrom' not in drive.opts and drive.fstype != '':
+            print("Drive:", drive.device)
+            print("Mountpoint:", drive.mountpoint)
             disk_usage = psutil.disk_usage(drive.mountpoint)
+            print("Total Size:", disk_usage.total)
+            print("Used:", disk_usage.used)
+            print("Free:", disk_usage.free)
+            print("Percentage:", disk_usage.percent)
             drive_scores.append(disk_usage.percent)
-    avg_drive_score = round(sum(drive_scores) / len(drive_scores), 2)
+    avg_drive_score = sum(drive_scores) / len(drive_scores)
+    avg_drive_score = round(avg_drive_score, 2)  # Rounding to two decimal places
     print("Average Drive Score:", avg_drive_score)
     return avg_drive_score
 
@@ -86,7 +104,6 @@ def network_benchmark():
     print("\nNetwork Benchmark")
     print("-----------------")
     try:
-        import speedtest
         st = speedtest.Speedtest()
         st.download()
         st.upload()
