@@ -3,7 +3,7 @@ import time
 import os
 import tkinter as tk
 from tkinter import font
-import speedtest
+import subprocess
 
 # CPU Benchmark
 def cpu_benchmark():
@@ -99,23 +99,36 @@ def drive_benchmark():
     print("Average Drive Score:", avg_drive_score)
     return avg_drive_score
 
-# Network Benchmark
+# Network Benchmark using subprocess to call speedtest-cli
 def network_benchmark():
     print("\nNetwork Benchmark")
     print("-----------------")
     try:
-        st = speedtest.Speedtest()
-        st.download()
-        st.upload()
-        download_speed = st.results.download / 1e6  # Convert to Mbps
-        upload_speed = st.results.upload / 1e6  # Convert to Mbps
-        avg_network_score = round((download_speed + upload_speed) / 2, 2)
-        print(f"Download Speed: {download_speed:.2f} Mbps")
-        print(f"Upload Speed: {upload_speed:.2f} Mbps")
-        print("Average Network Score:", avg_network_score)
-        return avg_network_score
-    except ImportError:
-        print("Speedtest-cli is not installed. Skipping Network Benchmark...")
+        # Use subprocess to call the speedtest-cli tool directly
+        result = subprocess.run(["speedtest-cli", "--simple"], capture_output=True, text=True)
+        
+        # Parse the output from the command
+        output = result.stdout
+        download_speed = None
+        upload_speed = None
+        for line in output.split("\n"):
+            if "Download" in line:
+                download_speed = float(line.split(":")[1].strip().split()[0])
+            if "Upload" in line:
+                upload_speed = float(line.split(":")[1].strip().split()[0])
+        
+        if download_speed and upload_speed:
+            avg_network_score = round((download_speed + upload_speed) / 2, 2)
+            print(f"Download Speed: {download_speed:.2f} Mbps")
+            print(f"Upload Speed: {upload_speed:.2f} Mbps")
+            print("Average Network Score:", avg_network_score)
+            return avg_network_score
+        else:
+            print("Network speed could not be determined.")
+            return None
+
+    except Exception as e:
+        print(f"Error during network benchmark: {e}")
         return None
 
 # Calculate Overall Score
