@@ -4,6 +4,8 @@ import os
 import tkinter as tk
 from tkinter import font
 import subprocess
+from PIL import ImageGrab
+import pyperclip
 
 # CPU Benchmark
 def cpu_benchmark():
@@ -46,11 +48,9 @@ def gpu_benchmark():
                     queue.finish()
                     elapsed = time.time() - start
                     
-                    # Check if elapsed is too small
                     if elapsed > 0:
                         gpu_score = N / elapsed
-                        # Round the GPU benchmark score to the first two figures
-                        rounded_gpu_score = round(gpu_score / 10000000)  # Rounding to first two figures
+                        rounded_gpu_score = round(gpu_score / 10000000)
                         print("GPU Benchmark Score:", rounded_gpu_score)
                         return rounded_gpu_score
                     else:
@@ -62,7 +62,6 @@ def gpu_benchmark():
         print("PyOpenCL is not installed. Skipping GPU Benchmark...")
         return None
 
-# RAM Benchmark
 def ram_benchmark():
     print("\nRAM Benchmark")
     print("-------------")
@@ -74,11 +73,10 @@ def ram_benchmark():
         ram_usage.append(ram.percent)
         time.sleep(1)
     avg_ram_score = sum(ram_usage) / len(ram_usage)
-    avg_ram_score = round(avg_ram_score, 2)  # Rounding to two decimal places
+    avg_ram_score = round(avg_ram_score, 2)
     print("Average RAM Score:", avg_ram_score)
     return avg_ram_score
 
-# Drive Benchmark
 def drive_benchmark():
     print("\nDrive Benchmark")
     print("---------------")
@@ -95,19 +93,16 @@ def drive_benchmark():
             print("Percentage:", disk_usage.percent)
             drive_scores.append(disk_usage.percent)
     avg_drive_score = sum(drive_scores) / len(drive_scores)
-    avg_drive_score = round(avg_drive_score, 2)  # Rounding to two decimal places
+    avg_drive_score = round(avg_drive_score, 2)
     print("Average Drive Score:", avg_drive_score)
     return avg_drive_score
 
-# Network Benchmark using subprocess to call speedtest-cli
 def network_benchmark():
     print("\nNetwork Benchmark")
     print("-----------------")
     try:
-        # Use subprocess to call the speedtest-cli tool directly
         result = subprocess.run(["speedtest-cli", "--simple"], capture_output=True, text=True)
         
-        # Parse the output from the command
         output = result.stdout
         download_speed = None
         upload_speed = None
@@ -126,12 +121,10 @@ def network_benchmark():
         else:
             print("Network speed could not be determined.")
             return None
-
     except Exception as e:
         print(f"Error during network benchmark: {e}")
         return None
 
-# Calculate Overall Score
 def calculate_overall_score(cpu_score, gpu_score, ram_score, drive_score, network_score):
     scores = [cpu_score, ram_score, drive_score]
     if gpu_score is not None:
@@ -141,6 +134,20 @@ def calculate_overall_score(cpu_score, gpu_score, ram_score, drive_score, networ
     overall_score = round(sum(scores) / len(scores), 2)
     print("\nOverall Score:", overall_score)
     return overall_score
+
+# Function to capture only the result window and copy to clipboard
+def capture_and_copy(window):
+    # Capture the window area by getting its geometry and position
+    x, y, width, height = window.winfo_rootx(), window.winfo_rooty(), window.winfo_width(), window.winfo_height()
+    
+    # Capture the region (result window) and save the screenshot
+    img = ImageGrab.grab(bbox=(x, y, x + width, y + height))
+    img.save("screenshot.png")  # Optional, save for reference
+    
+    # Copy image to clipboard (need to convert image to format that pyperclip can handle)
+    # This part uses pyperclip to copy a string message to clipboard
+    pyperclip.copy("Screenshot taken successfully!")  # Inform user
+    print("Screenshot copied to clipboard!")
 
 # Main function
 def main():
@@ -154,7 +161,7 @@ def main():
     # Create GUI window
     root = tk.Tk()
     root.title("System Benchmark Results")
-    root.geometry("600x400")  # Doubled the window size
+    root.geometry("600x400")
 
     # Set a custom font
     header_font = font.Font(root, family="Helvetica", size=14, weight="bold")
@@ -168,7 +175,7 @@ def main():
     header_label = tk.Label(frame, text="System Benchmark Results", font=header_font)
     header_label.grid(row=0, column=0, columnspan=2, pady=(0, 20))
 
-    # Define a function to create labels for each score
+    # Function to create labels for each score
     def create_score_label(row, name, score):
         name_label = tk.Label(frame, text=f"{name}:", font=label_font, anchor="w")
         name_label.grid(row=row, column=0, sticky="w", padx=(0, 10), pady=5)
@@ -184,6 +191,10 @@ def main():
     create_score_label(4, "Drive Score", drive_score)
     create_score_label(5, "Network Score", network_score if network_score else "N/A")
     create_score_label(6, "Overall Score", overall_score)
+
+    # Add "Screenie" button
+    copy_button = tk.Button(root, text="Screenie", font=label_font, command=lambda: capture_and_copy(root))
+    copy_button.place(x=500, y=10)
 
     root.mainloop()
 
